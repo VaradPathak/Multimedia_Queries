@@ -3,6 +3,7 @@ package playVideo;
 import java.util.ArrayList;
 import java.util.List;
 
+import extractInformation.ExtractFeatures;
 import playWaveFile.PlayWaveFile;
 
 public class imageReader {
@@ -16,14 +17,14 @@ public class imageReader {
 		List<Double[]> queryFeature1 = new ArrayList<>();
 		List<Double[]> queryFeature2 = new ArrayList<>();
 
-		String videoFileName = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\soccer1.rgb";
+		String videoFileName = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\talk1.rgb";
 		String audioFileName = "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\soccer1.wav";
 
-		String videoquery1 = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\soccer2.rgb";
+		String videoquery1 = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\talk2.rgb";
 		// String audioquery1 =
 		// "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\soccer2.wav";
 
-		String videoquery2 = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\talk1.rgb";
+		String videoquery2 = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\talk3.rgb";
 		// String audioquery2 =
 		// "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\talk1.wav";
 		int width = 352;
@@ -33,17 +34,17 @@ public class imageReader {
 		Thread audioWorker = new Thread(audioTask);
 		audioWorker.setName("audio");
 
-		Runnable videoTask = new PlayVideo(width, height, videoFileName,
+		Runnable videoTask = new ExtractFeatures(width, height, videoFileName,
 				feature1);
 		Thread videoWorker = new Thread(videoTask);
 		videoWorker.setName("video");
 
-		Runnable videoTask1 = new PlayVideo(width, height, videoquery1,
+		Runnable videoTask1 = new ExtractFeatures(width, height, videoquery1,
 				queryFeature1);
 		Thread videoWorker1 = new Thread(videoTask1);
 		videoWorker.setName("video1");
 
-		Runnable videoTask2 = new PlayVideo(width, height, videoquery2,
+		Runnable videoTask2 = new ExtractFeatures(width, height, videoquery2,
 				queryFeature2);
 		Thread videoWorker2 = new Thread(videoTask2);
 		videoWorker.setName("video2");
@@ -59,19 +60,22 @@ public class imageReader {
 
 		System.out.println(feature1.size() + " " + queryFeature1.size() + " "
 				+ queryFeature2.size());
-		System.out.println(matchVideo(feature1, queryFeature1));
-		System.out.println(matchVideo(feature1, queryFeature2));
+		System.out.println(matchVideo(feature1, queryFeature1)
+				/ queryFeature1.size());
+		System.out.println(matchVideo(feature1, queryFeature2)
+				/ queryFeature2.size());
 	}
 
-	static double matchVideo(List<Double[]> feature, List<Double[]> feature2) {
+	static double matchVideo(List<Double[]> feature2, List<Double[]> feature1) {
 		double totalMatchRating = 0.0;
-		for (Double[] fea1 : feature) {
+		for (Double[] fea1 : feature1) {
 			double min = Integer.MAX_VALUE;
 			for (Double[] fea2 : feature2) {
 				double mad = mad(fea1, fea2);
 				min = min > mad ? mad : min;
 			}
 			totalMatchRating += min;
+			// System.out.println(min);
 		}
 		return totalMatchRating;
 	}
@@ -83,7 +87,8 @@ public class imageReader {
 			double1 = double1 > 0 ? double1 : (double1 * -1);
 			result += double1;
 		}
-		result /= 25;
+		// result /= 25;
+		result *= 1000;
 		return result;
 	}
 }

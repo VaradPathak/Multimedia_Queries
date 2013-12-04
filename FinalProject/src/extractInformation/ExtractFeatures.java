@@ -88,16 +88,15 @@ public class ExtractFeatures implements Runnable {
 	private void extractFeatures(long size, byte[] bytes) {
 		ExtractChroma extract = new ExtractChroma();
 		long iteration = size / (height * width * 3);
-		long frameSize = (height * width * 3);
-		for (int i = 0; i < iteration - 2; i++) {
-			int ind = (int) (i * frameSize);
-			byte[] frame = new byte[(int) size];
+		int frameSize = (height * width * 3);
+		int skip = height * width;
+		for (int i = 0; i < iteration; i++) {
+			int ind = (i * frameSize);
+			byte[] frame = new byte[(int) frameSize];
 
-			System.arraycopy(bytes, ind, frame, 0, (int) frameSize);
-			System.arraycopy(bytes, ind + height * width, frame, 0,
-					(int) frameSize + height * width);
-			System.arraycopy(bytes, ind + height * width, frame, 0,
-					(int) frameSize + height * width * 2);
+			System.arraycopy(bytes, ind, frame, 0, skip);
+			System.arraycopy(bytes, ind + skip, frame, skip, skip);
+			System.arraycopy(bytes, ind + (skip * 2), frame, (skip * 2), skip);
 
 			this.chromaFeatureList.add(extract.extractChroma(frame));
 		}

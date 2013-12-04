@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import userInterface.Frontend;
 import extractInformation.ExtractChroma;
 
 /**
@@ -61,6 +62,8 @@ public class PlayVideo implements Runnable {
 			}
 
 			ExtractChroma extract = new ExtractChroma();
+			Frontend frontend = new Frontend();
+			frontend.createUi();
 
 			for (int i = 0; i < iteration - 2; i++) {
 				int ind = (int) (i * frameSize);
@@ -81,58 +84,48 @@ public class PlayVideo implements Runnable {
 						byte g = bytes[ind + height * width];
 						byte b = bytes[ind + height * width * 2];
 
-						// To HSB
-
-						float[] hsb = Color.RGBtoHSB(r, g, b, null);
-
-						float hue = hsb[0];
-
-						// System.out.println("RGB [" + r + "," + g + "," + b
-						// + "] converted to HSB [" + hue + ","
-						// + saturation + "," + brightness + "]");
-
-						// End To HSB
-
 						int pix = 0xff000000 | ((r & 0xff) << 16)
 								| ((g & 0xff) << 8) | (b & 0xff);
 						currentFrame.setRGB(x, y, pix);
+						if (y > 258)
+							System.out.println(r + " " + g + " " + b);
 						ind++;
 					}
 				}
 
-				// Use a label to display the image
-				JLabel label = new JLabel(new ImageIcon(currentFrame));
-				// frame.getContentPane().add(label);
-
-				JPanel pane = new JPanel(new BorderLayout());
-				// We always have two UI elements (columns) and we have three
-				// rows
-				int numberOfRows = 2;
-				int numberOfColumns = 4;
-				// pane.setLayout(new GridLayout(numberOfRows,
-				// numberOfColumns));
-
-				// create and attach buttons
-				// create a label and add it to the main window
-				pane.add(label, BorderLayout.NORTH);
-
-				JLabel firstNamelabel = new JLabel(" Firstname: ");
-				pane.add(firstNamelabel, BorderLayout.LINE_START);
-				pane.add(new JTextField(), BorderLayout.LINE_END);
-
-				JLabel lastNamelabel = new JLabel(" Lastname: ");
-
-				pane.add(lastNamelabel, BorderLayout.LINE_START);
-				pane.add(new JTextField(), BorderLayout.LINE_END);
-
-				JButton sayHello = new JButton("Say something");
-				pane.add(sayHello, BorderLayout.LINE_START);
-
-				pane.add(new JCheckBox("Nice"), BorderLayout.LINE_END);
-
-				frame.getContentPane().add(pane);
-				frame.pack();
-				frame.setVisible(true);
+				/*
+				 * // Use a label to display the image JLabel label = new
+				 * JLabel(new ImageIcon(currentFrame)); //
+				 * frame.getContentPane().add(label);
+				 * 
+				 * JPanel pane = new JPanel(new BorderLayout()); // We always
+				 * have two UI elements (columns) and we have three // rows int
+				 * numberOfRows = 2; int numberOfColumns = 4; //
+				 * pane.setLayout(new GridLayout(numberOfRows, //
+				 * numberOfColumns));
+				 * 
+				 * // create and attach buttons // create a label and add it to
+				 * the main window pane.add(label, BorderLayout.NORTH);
+				 * 
+				 * JLabel firstNamelabel = new JLabel(" Firstname: ");
+				 * pane.add(firstNamelabel, BorderLayout.LINE_START);
+				 * pane.add(new JTextField(), BorderLayout.LINE_END);
+				 * 
+				 * JLabel lastNamelabel = new JLabel(" Lastname: ");
+				 * 
+				 * pane.add(lastNamelabel, BorderLayout.LINE_START);
+				 * pane.add(new JTextField(), BorderLayout.LINE_END);
+				 * 
+				 * JButton sayHello = new JButton("Say something");
+				 * pane.add(sayHello, BorderLayout.LINE_START);
+				 * 
+				 * pane.add(new JCheckBox("Nice"), BorderLayout.LINE_END);
+				 * 
+				 * frame.getContentPane().add(pane); frame.pack();
+				 * frame.setVisible(true);
+				 */
+				frontend.OriginalVideoLabel
+						.setIcon(new ImageIcon(currentFrame));
 				TimeUnit.MILLISECONDS.sleep(15);
 			}
 		} catch (FileNotFoundException e) {
