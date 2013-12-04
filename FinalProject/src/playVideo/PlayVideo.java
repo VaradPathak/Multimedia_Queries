@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.ImageIcon;
 
 import userInterface.Frontend;
-import extractInformation.ExtractChroma;
 
 /**
  * @author Varad
