@@ -20,10 +20,12 @@ public class imageReader {
 		String audioFileName = "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\soccer1.wav";
 
 		String videoquery1 = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\soccer2.rgb";
-		String audioquery1 = "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\soccer2.wav";
+		// String audioquery1 =
+		// "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\soccer2.wav";
 
 		String videoquery2 = "F:\\git\\Multimedia_Queries\\FinalProject\\video_data\\talk1.rgb";
-		String audioquery2 = "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\talk1.wav";
+		// String audioquery2 =
+		// "F:\\git\\Multimedia_Queries\\FinalProject\\all_audio_files\\talk1.wav";
 		int width = 352;
 		int height = 288;
 
@@ -41,34 +43,37 @@ public class imageReader {
 		Thread videoWorker1 = new Thread(videoTask1);
 		videoWorker.setName("video1");
 
-		/*
-		 * Runnable videoTask2 = new PlayVideo(width, height, videoFileName,
-		 * queryFeature2); Thread videoWorker2 = new Thread(videoTask2);
-		 * videoWorker.setName("video2");
-		 */
+		Runnable videoTask2 = new PlayVideo(width, height, videoquery2,
+				queryFeature2);
+		Thread videoWorker2 = new Thread(videoTask2);
+		videoWorker.setName("video2");
 
-		/*
-		 * MultimediaQueryPlayer view = new MultimediaQueryPlayer();
-		 * view.setVisible(true); ImageIcon frame = new ImageIcon()
-		 */
 		videoWorker.start();
 		videoWorker.join();
-		// videoWorker2.start();
+
 		videoWorker1.start();
 		videoWorker1.join();
-		// audioWorker.start();
-		System.out.println(feature1.size()+" "+queryFeature1.size());
-		matchVideo(feature1, queryFeature1);
+
+		videoWorker2.start();
+		videoWorker2.join();
+
+		System.out.println(feature1.size() + " " + queryFeature1.size() + " "
+				+ queryFeature2.size());
+		System.out.println(matchVideo(feature1, queryFeature1));
+		System.out.println(matchVideo(feature1, queryFeature2));
 	}
 
-	static void matchVideo(List<Double[]> feature, List<Double[]> feature2) {
+	static double matchVideo(List<Double[]> feature, List<Double[]> feature2) {
+		double totalMatchRating = 0.0;
 		for (Double[] fea1 : feature) {
 			double min = Integer.MAX_VALUE;
 			for (Double[] fea2 : feature2) {
-				min = min > mad(fea1, fea2) ? mad(fea1, fea2) : min;
+				double mad = mad(fea1, fea2);
+				min = min > mad ? mad : min;
 			}
-			System.out.println(min);
+			totalMatchRating += min;
 		}
+		return totalMatchRating;
 	}
 
 	static double mad(Double[] arr1, Double[] arr2) {
