@@ -1,7 +1,5 @@
 package playVideo;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,12 +10,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import userInterface.Frontend;
 import extractInformation.ExtractChroma;
@@ -46,7 +38,6 @@ public class PlayVideo implements Runnable {
 		try {
 			File file = new File(fileName);
 			long size = file.length();
-			JFrame frame = new JFrame("Multimedia Player");
 			BufferedImage currentFrame = new BufferedImage(width, height,
 					BufferedImage.TYPE_INT_RGB);
 			long frameSize = (height * width * 3);
@@ -61,22 +52,12 @@ public class PlayVideo implements Runnable {
 				offset += numRead;
 			}
 
-			ExtractChroma extract = new ExtractChroma();
 			Frontend frontend = new Frontend();
 			frontend.createUi();
 
 			for (int i = 0; i < iteration - 2; i++) {
 				int ind = (int) (i * frameSize);
-				byte[] extractFrame = new byte[(int) size];
-
-				System.arraycopy(bytes, ind, extractFrame, 0, (int) frameSize);
-				System.arraycopy(bytes, ind + height * width, extractFrame, 0,
-						(int) frameSize + height * width);
-				System.arraycopy(bytes, ind + height * width, extractFrame, 0,
-						(int) frameSize + height * width * 2);
-
-				this.featureList.add(extract.extractChroma(extractFrame));
-
+				
 				for (int y = 0; y < height; y++) {
 
 					for (int x = 0; x < width; x++) {
@@ -87,43 +68,10 @@ public class PlayVideo implements Runnable {
 						int pix = 0xff000000 | ((r & 0xff) << 16)
 								| ((g & 0xff) << 8) | (b & 0xff);
 						currentFrame.setRGB(x, y, pix);
-						if (y > 258)
-							System.out.println(r + " " + g + " " + b);
 						ind++;
 					}
 				}
 
-				/*
-				 * // Use a label to display the image JLabel label = new
-				 * JLabel(new ImageIcon(currentFrame)); //
-				 * frame.getContentPane().add(label);
-				 * 
-				 * JPanel pane = new JPanel(new BorderLayout()); // We always
-				 * have two UI elements (columns) and we have three // rows int
-				 * numberOfRows = 2; int numberOfColumns = 4; //
-				 * pane.setLayout(new GridLayout(numberOfRows, //
-				 * numberOfColumns));
-				 * 
-				 * // create and attach buttons // create a label and add it to
-				 * the main window pane.add(label, BorderLayout.NORTH);
-				 * 
-				 * JLabel firstNamelabel = new JLabel(" Firstname: ");
-				 * pane.add(firstNamelabel, BorderLayout.LINE_START);
-				 * pane.add(new JTextField(), BorderLayout.LINE_END);
-				 * 
-				 * JLabel lastNamelabel = new JLabel(" Lastname: ");
-				 * 
-				 * pane.add(lastNamelabel, BorderLayout.LINE_START);
-				 * pane.add(new JTextField(), BorderLayout.LINE_END);
-				 * 
-				 * JButton sayHello = new JButton("Say something");
-				 * pane.add(sayHello, BorderLayout.LINE_START);
-				 * 
-				 * pane.add(new JCheckBox("Nice"), BorderLayout.LINE_END);
-				 * 
-				 * frame.getContentPane().add(pane); frame.pack();
-				 * frame.setVisible(true);
-				 */
 				frontend.OriginalVideoLabel
 						.setIcon(new ImageIcon(currentFrame));
 				TimeUnit.MILLISECONDS.sleep(15);
