@@ -244,14 +244,14 @@ public class imageReader {
 		String split = ",";
 		String line = "";
 		BufferedReader br = null;
-		List<Double[]> result_feature = new ArrayList<>();
+		
 		
 		List<Result> results = new ArrayList<>();
 		File dir = new File(myDirectoryPath);
 		  for (File child : dir.listFiles()) {
-		    
-			 //System.out.println(child.getName());
 			  
+			 //System.out.println(child.getName());
+			  List<Double[]> result_feature = new ArrayList<>();
 			  String resultfilename =myDirectoryPath + child.getName();
 			  //String resultfilename =myDirectoryPath + "talk2.csv";
 			  br = new BufferedReader(new FileReader(resultfilename));
