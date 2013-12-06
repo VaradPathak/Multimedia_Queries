@@ -8,7 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-
+import java.util.ArrayList;
 /**
  * @author Varad
  * 
@@ -18,13 +18,16 @@ public class ExtractFeatures implements Runnable {
 	int height;
 	String fileName;
 	List<Double[]> chromaFeatureList;
-
-	public ExtractFeatures(int w, int h, String videoFileName,
-			List<Double[]> chromaFeatureList) {
+	int flag;
+	public ExtractFeatures(int w, int h, String videoFileName,List<Double[]> chromaFeatureList,int flag) {
 		this.width = w;
 		this.height = h;
 		this.fileName = videoFileName;
-		this.chromaFeatureList = chromaFeatureList;
+		if(flag == 0)
+			this.chromaFeatureList = new ArrayList<>();
+		else
+			this.chromaFeatureList = chromaFeatureList;	
+		this.flag = flag;
 	}
 
 	@Override
@@ -44,7 +47,8 @@ public class ExtractFeatures implements Runnable {
 			}
 
 			extractFeatures(size, bytes);
-			saveFeatures();
+			if(flag != 1) //if extractig features for query , dont save on disk
+				saveFeatures();
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -61,10 +65,14 @@ public class ExtractFeatures implements Runnable {
 	}
 
 	private void saveFeatures() throws IOException {
+		
+		String save_path = "/home/hrushikesh/eclipse/projects/final/csv_results/";
 		String featureFileName = this.fileName.substring(0,
 				this.fileName.lastIndexOf("."))
 				+ ".csv";
-
+		featureFileName = featureFileName.substring(featureFileName.lastIndexOf("/"),featureFileName.length());
+		featureFileName = save_path + featureFileName;
+		
 		File featureFile = new File(featureFileName);
 		if (!featureFile.exists()) {
 			featureFile.createNewFile();

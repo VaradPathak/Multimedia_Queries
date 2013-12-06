@@ -5,6 +5,10 @@ import java.awt.ComponentOrientation;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -14,8 +18,17 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
+import Result.Result;
+import playVideo.imageReader;
+import extractInformation.ExtractFeatures;
+
 public class Frontend {
 
+	public String queryName = null;
+	int width = 352;
+	int height = 288;
+	//remember to store query video in query folder!
+	String queryPath = "/home/hrushikesh/eclipse/projects/final/query/";
 	JFrame PlayerFrame = new JFrame("Video Player");
 	JPanel ButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
@@ -112,6 +125,54 @@ public class Frontend {
 				// insert actions for stop button
 			}
 		});
+		
+		final JButton Searchbutton = new JButton("Search");
+		Searchbutton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				queryName = inputQuery.getText();
+				String videoFileName = queryPath + queryName.substring(0, queryName.lastIndexOf(" "));
+				System.out.println(videoFileName);
+				
+				String audioFileName = queryPath + queryName.substring(queryName.lastIndexOf(" ")+1,queryName.length());
+				System.out.println(audioFileName);
+				// insert actions for search button
+				List<Double[]> feature1 = new ArrayList<>();
+				Runnable extractTask = new ExtractFeatures(width, height, videoFileName,
+						feature1,1);
+				Thread extractWorker = new Thread(extractTask);
+				extractWorker.setName("query");
+				//extract the features of query into the arraylist feature1
+				extractWorker.start();
+				try {
+					extractWorker.join();
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				try {
+					List<Result> r = imageReader.match_with_all_videos(feature1,videoFileName);
+					ArrayList<String> array= new ArrayList<>();
+				
+					for(int i = 0; i <r.size();i++)
+					{
+						array.add(r.get(i).videoname);
+						
+					}
+					Object[] arrayObject=array.toArray();
+					resultList.setListData(arrayObject);
+					
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				
+			}
+
+			
+		});
 
 		// PlayerFrame.setLayout(new FlowLayout(FlowLayout.CENTER));
 		// PlayerFrame.setLayout(new GridBagLayout());
@@ -166,6 +227,12 @@ public class Frontend {
 		inputQuery.setLocation(50, 50);
 		inputQuery.setText("Input Query to search from Database");
 		PlayerFrame.getContentPane().add(inputQuery);
+		
+		//button to search the query
+		Searchbutton.setSize(90, 25);;
+		Searchbutton.setLocation (50,90);
+		PlayerFrame.getContentPane().add(Searchbutton);
+		
 
 		// add result list box
 

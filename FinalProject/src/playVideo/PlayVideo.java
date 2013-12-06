@@ -51,8 +51,7 @@ public class PlayVideo implements Runnable {
 				offset += numRead;
 			}
 
-			Frontend frontend = new Frontend();
-			frontend.createUi();
+			
 
 			for (int i = 0; i < iteration - 2; i++) {
 				int ind = (int) (i * frameSize);
@@ -71,9 +70,9 @@ public class PlayVideo implements Runnable {
 					}
 				}
 
-				frontend.OriginalVideoLabel
-						.setIcon(new ImageIcon(currentFrame));
-				TimeUnit.MILLISECONDS.sleep(15);
+				//frontend.OriginalVideoLabel
+				//		.setIcon(new ImageIcon(currentFrame));
+				TimeUnit.MILLISECONDS.sleep(30);
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
