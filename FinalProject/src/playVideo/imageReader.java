@@ -36,7 +36,7 @@ import extractInformation.ExtractFeatures;
 
 public class imageReader {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, IOException {
 
 		// String fileName = args[0];
 		// int width = Integer.parseInt(args[1]);
