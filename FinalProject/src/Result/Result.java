@@ -1,6 +1,5 @@
 package Result;
 
-import java.util.Comparator;
 
 public class Result{
 	public double rank_value;

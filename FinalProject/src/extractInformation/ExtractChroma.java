@@ -17,7 +17,7 @@ public class ExtractChroma {
 	 * We divide the image in 32 x 32 micro-blocks and average the Hue Value for
 	 * that block to extract only the chroma component of the frame/image.
 	 * 
-	 * @return result Average Hue Of each micro-block
+	 * @return Average Hue of each micro-block
 	 * @param input
 	 *            A frame byte array
 	 */
@@ -26,7 +26,6 @@ public class ExtractChroma {
 		int width = 352;
 		Double[] result = new Double[25];
 		int arrayInd = 0;
-		int count = 0;
 
 		for (int i = 0; i < 5; i++) {
 			for (int j = 0; j < 5; j++) {
@@ -49,20 +48,12 @@ public class ExtractChroma {
 						float[] hsb = Color.RGBtoHSB(r, g, b, null);
 						result[arrayInd] += (double) hsb[0];
 
-						if (i == 0 && j == 1) {
-							// System.out.println(hsb[0]);
-							/*
-							 * if (r != 0 || g != 0 || b != 0) count++;
-							 */
-						}
-
 					}
 				}
 				result[arrayInd] /= (macroBlockDimension * macroBlockDimension);
 				arrayInd += 1;
 			}
 		}
-		// System.out.println(count);
 		return result;
 	}
 }

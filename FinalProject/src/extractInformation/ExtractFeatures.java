@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.ArrayList;
+
+import playWaveFile.PlayWaveException;
+
 /**
  * @author Varad
  * 
@@ -16,17 +19,26 @@ import java.util.ArrayList;
 public class ExtractFeatures implements Runnable {
 	int width;
 	int height;
-	String fileName;
+	String videoFileName;
+	String audioFileName;
 	List<Double[]> chromaFeatureList;
+	List<Double[]> audioFeatureList;
 	int flag;
-	public ExtractFeatures(int w, int h, String videoFileName,List<Double[]> chromaFeatureList,int flag) {
+
+	public ExtractFeatures(int w, int h, String videoFileName,
+			List<Double[]> chromaFeatures, String audiofilename,
+			List<Double[]> audioFeatures, int flag) {
 		this.width = w;
 		this.height = h;
-		this.fileName = videoFileName;
-		if(flag == 0)
+		this.videoFileName = videoFileName;
+		this.audioFileName = audiofilename;
+		if (flag == 0) {
 			this.chromaFeatureList = new ArrayList<>();
-		else
-			this.chromaFeatureList = chromaFeatureList;	
+			this.audioFeatureList = new ArrayList<>();
+		} else {
+			this.chromaFeatureList = chromaFeatures;
+			this.audioFeatureList = audioFeatures;
+		}
 		this.flag = flag;
 	}
 
@@ -34,7 +46,7 @@ public class ExtractFeatures implements Runnable {
 	public void run() {
 		InputStream is = null;
 		try {
-			File file = new File(fileName);
+			File file = new File(videoFileName);
 			long size = file.length();
 			is = new FileInputStream(file);
 			byte[] bytes = new byte[(int) size];
@@ -47,8 +59,11 @@ public class ExtractFeatures implements Runnable {
 			}
 
 			extractFeatures(size, bytes);
-			if(flag != 1) //if extractig features for query , dont save on disk
-				saveFeatures();
+			// if extracting features for query , don't save on disk
+			if (flag != 1) {
+				saveVideoFeatures();
+				saveAudioFeatures();
+			}
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -64,16 +79,55 @@ public class ExtractFeatures implements Runnable {
 		}
 	}
 
-	private void saveFeatures() throws IOException {
-		
-		String save_path = "/home/hrushikesh/eclipse/projects/final/csv_results/";
-		String featureFileName = this.fileName.substring(0,
-				this.fileName.lastIndexOf("."))
-				+ ".csv";
-		featureFileName = featureFileName.substring(featureFileName.lastIndexOf("/"),featureFileName.length());
-		featureFileName = save_path + featureFileName;
-		
-		File featureFile = new File(featureFileName);
+	/**
+	 * Save extracted audio features to the corresponding csv file
+	 * 
+	 * @throws IOException
+	 */
+	private void saveAudioFeatures() throws IOException {
+		String save_path = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\audio_result_csv";
+		String audioFeatureFileName = this.videoFileName.substring(0,
+				this.videoFileName.lastIndexOf(".")) + ".csv";
+
+		audioFeatureFileName = audioFeatureFileName.substring(
+				audioFeatureFileName.lastIndexOf("\\"),
+				audioFeatureFileName.length());
+		audioFeatureFileName = save_path + "\\" + audioFeatureFileName;
+		File featureFile = new File(audioFeatureFileName);
+		if (!featureFile.exists()) {
+			featureFile.createNewFile();
+		}
+
+		FileWriter fw = new FileWriter(featureFile.getAbsoluteFile());
+		BufferedWriter bw = new BufferedWriter(fw);
+		for (Double[] sampleAudioFeature : this.audioFeatureList) {
+			for (int i = 0; i < sampleAudioFeature.length; i++) {
+				if (i < sampleAudioFeature.length - 1) {
+					bw.write(sampleAudioFeature[i] + ",");
+				} else {
+					bw.write(sampleAudioFeature[i] + "\n");
+				}
+			}
+		}
+
+		bw.close();
+	}
+
+	/**
+	 * Save extracted video features to the corresponding csv file
+	 * 
+	 * @throws IOException
+	 */
+	private void saveVideoFeatures() throws IOException {
+		String save_path = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\video_result_csv";
+		String videoFeatureFileName = this.videoFileName.substring(0,
+				this.videoFileName.lastIndexOf(".")) + ".csv";
+
+		videoFeatureFileName = videoFeatureFileName.substring(
+				videoFeatureFileName.lastIndexOf("\\"),
+				videoFeatureFileName.length());
+		videoFeatureFileName = save_path + "\\" + videoFeatureFileName;
+		File featureFile = new File(videoFeatureFileName);
 		if (!featureFile.exists()) {
 			featureFile.createNewFile();
 		}
@@ -93,8 +147,17 @@ public class ExtractFeatures implements Runnable {
 		bw.close();
 	}
 
+	/**
+	 * Extract audio and video features from the corresponding files
+	 * 
+	 * @param size
+	 *            : total size of the video file
+	 * @param bytes
+	 *            : Byte array containing RGB values of the video, frame by
+	 *            frame
+	 */
 	private void extractFeatures(long size, byte[] bytes) {
-		ExtractChroma extract = new ExtractChroma();
+		ExtractChroma extractChroma = new ExtractChroma();
 		long iteration = size / (height * width * 3);
 		int frameSize = (height * width * 3);
 		int skip = height * width;
@@ -106,7 +169,13 @@ public class ExtractFeatures implements Runnable {
 			System.arraycopy(bytes, ind + skip, frame, skip, skip);
 			System.arraycopy(bytes, ind + (skip * 2), frame, (skip * 2), skip);
 
-			this.chromaFeatureList.add(extract.extractChroma(frame));
+			this.chromaFeatureList.add(extractChroma.extractChroma(frame));
+		}
+		ExtractAudio extractAudio = new ExtractAudio(this.audioFileName);
+		try {
+			extractAudio.extractAudio(this.audioFeatureList);
+		} catch (PlayWaveException e) {
+			e.printStackTrace();
 		}
 	}
 
