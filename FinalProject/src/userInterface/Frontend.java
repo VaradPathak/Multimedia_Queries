@@ -4,10 +4,13 @@ import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +29,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.math.plot.Plot2DPanel;
+
 import playVideo.Main;
 import playVideo.PlayVideo;
 import playWaveFile.PlayWaveFile;
@@ -39,9 +44,10 @@ public class Frontend {
 	int width = 352;
 	int height = 288;
 	// remember to store query video in query folder!
-	String queryPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\query\\";
-	String videodbPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\video_data\\";
-	String audiodbPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\audio_data\\";
+
+	String queryPath = "/home/hrushikesh/eclipse/projects/final/query/";
+	String videodbPath = "/home/hrushikesh/eclipse/projects/final/db/";
+	String audiodbPath = "/home/hrushikesh/eclipse/projects/final/all_audio_files/";
 	JFrame PlayerFrame = new JFrame("Video Player");
 	// JPanel ButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 	// JFrame ButtonPanel = new JFrame();
@@ -89,6 +95,91 @@ public class Frontend {
 	Thread queryAudioWorker;
 	PlayWaveFile queryAudioTemp;
 
+	Plot2DPanel histogram = new Plot2DPanel();
+	Plot2DPanel histogram_blank = new Plot2DPanel();
+	Map<String, Map<Integer, ArrayList<Double>>> video_value_map = new HashMap<>();
+	Map<String, Map<Integer, ArrayList<Double>>> audio_value_map = new HashMap<>();
+	Map<String, Plot2DPanel> histogram_map = new HashMap<>();
+
+	public Map<String, double[]> convolute(
+			Map<String, Map<Integer, ArrayList<Double>>> video_value_map,
+			long no_of_frames) {
+		Map<String, double[]> resultMap = new HashMap<>();
+
+		int jumpSize = 4;
+
+		for (String d : video_value_map.keySet()) {
+			double[] result = new double[(int) no_of_frames];
+			Map<Integer, ArrayList<Double>> video_map = video_value_map.get(d);
+			for (Integer e : video_map.keySet()) {
+				ArrayList<Double> matchList = video_map.get(e);
+				for (int i = 0; i < matchList.size(); i++) {
+					double value = matchList.get(i);
+					if ((e * jumpSize + i * jumpSize) < no_of_frames)
+						result[e * jumpSize + i * jumpSize] = value + 1;
+					else
+						break;
+				}
+			}
+			resultMap.put(d, result);
+		}
+
+		return resultMap;
+	}
+
+	public void Calculate_Histogram(
+			Map<String, Map<Integer, ArrayList<Double>>> video_value_map,
+			Map<String, Map<Integer, ArrayList<Double>>> audio_value_map,
+			Map<String, Plot2DPanel> histogram_map, long no_of_frames) {
+
+		Map<String, double[]> resultMap = convolute(video_value_map,
+				no_of_frames);
+
+		for (String name : resultMap.keySet()) {
+			double[] result = resultMap.get(name);
+			double max = 0;
+			for (double d : result) {
+				if (d > max) {
+					max = d;
+				}
+			}
+			for (int i = 0; i < result.length; i++) {
+				if (result[i] > 0) {
+					result[i] = max - result[i];
+				}
+			}
+
+			double[][] plotVals = new double[(int) no_of_frames][2];
+			double[] width = new double[(int) no_of_frames];
+			for (int i = 0; i < no_of_frames; i++) {
+				plotVals[i][0] = i;
+				plotVals[i][1] = result[i];
+				width[i] = 0.1;
+			}
+			Plot2DPanel plot = new Plot2DPanel();
+
+			// add a line plot to the PlotPanel
+			plot.addHistogramPlot("My Plot", plotVals, width);
+			plot.remove(plot.getComponent(0));
+
+			histogram_map.put(name, plot);
+
+		}
+	}
+	void update_histogram(String videoname) {
+	
+//		histogram_blank.setSize(352, 40);
+//		histogram_blank.setLocation(710, 340);
+//		PlayerFrame.getContentPane().add(histogram_blank);
+		histogram.setVisible(false);
+		histogram = histogram_map.get(videoname);
+		histogram.setSize(352, 40);
+		histogram.setLocation(710, 340);
+		PlayerFrame.getContentPane().add(histogram);
+		histogram.setVisible(true);
+		
+	}
+
 	public void createUi() throws IOException {
 
 		// CREATE PLAY BUTTON
@@ -102,7 +193,7 @@ public class Frontend {
 					IS_PLAYING = true;
 
 					if (IS_SELECTED == true) {
-						IS_SELECTED = false;
+						//IS_SELECTED = false;
 						String videoname = resultList.getSelectedValue()
 								.toString() + ".rgb";
 						videoname = videodbPath + videoname;
@@ -116,6 +207,18 @@ public class Frontend {
 								.toString() + ".wav";
 						audioname = audiodbPath + audioname;
 
+						// display histogram
+						update_histogram(resultList
+								.getSelectedValue().toString());
+						
+						/*histogram = histogram_map.get(resultList.getSelectedValue()
+								.toString());
+						histogram.setSize(352, 40);
+						histogram.setLocation(710, 340);
+						PlayerFrame.getContentPane().add(histogram);*/
+						
+						// histogram.remove(histogram.getComponent(0));
+						//PlayerFrame.getContentPane().add(histogram);
 						matchedAudioTask = new PlayWaveFile(audioname);
 						matchedAudioTemp = (PlayWaveFile) matchedAudioTask;
 						matchedAudioWorker = new Thread(matchedAudioTask);
@@ -143,7 +246,8 @@ public class Frontend {
 					matchedvideotemp = (PlayVideo) matchedvideoTask;
 					matchedvideoWorker = new Thread(matchedvideoTask);
 					matchedvideoWorker.setName("videoplay");
-
+					update_histogram(resultList
+							.getSelectedValue().toString());
 					String audioname = resultList.getSelectedValue().toString()
 							+ ".wav";
 					audioname = audiodbPath + audioname;
@@ -194,6 +298,7 @@ public class Frontend {
 				MatchedVideoLabel.setForeground(Color.black);
 				MatchedVideoLabel.setIcon(null);
 				matchedscrollbar.setValue(0);
+				
 			}
 		});
 
@@ -337,12 +442,20 @@ public class Frontend {
 					e1.printStackTrace();
 				}
 				try {
+
 					List<Result> videoMatchResult = Main.match_with_all_videos(
-							videoFeatures, videoFileName);
+							videoFeatures, videoFileName, video_value_map);
 
 					Map<String, Result> audioMatchResult = Main
-							.match_with_all_audios(audioFeatures, audioFileName);
+							.match_with_all_audios(audioFeatures,
+									audioFileName, audio_value_map);
 
+					File file = new File(videoFileName);
+
+					long no_of_frames = file.length() / (height * width * 3);
+
+					Calculate_Histogram(video_value_map, audio_value_map,
+							histogram_map, no_of_frames);
 					for (Result result : videoMatchResult) {
 						if (audioMatchResult.containsKey(result.videoname)) {
 							result.rank_value += audioMatchResult
@@ -408,11 +521,43 @@ public class Frontend {
 			}
 		});
 
+		inputQuery.addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// TODO Auto-generated method stub
+				inputQuery.setText("");
+			}
+		});
 		// PlayerFrame.setLayout(new FlowLayout(FlowLayout.CENTER));
 		// PlayerFrame.setLayout(new GridBagLayout());
 		// GridBagConstraints c = new GridBagConstraints();
 		PlayerFrame.setLayout(null);
-		String imgpath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\ninja.png";
+		String imgpath = "/home/hrushikesh/eclipse/projects/final/ninja.png";
 
 		JLabel imgLabel = new JLabel(new ImageIcon(ImageIO.read(new File(
 				imgpath))));
@@ -504,7 +649,7 @@ public class Frontend {
 
 		// button to search the query
 		Searchbutton.setSize(90, 25);
-		;
+
 		Searchbutton.setLocation(50, 90);
 		PlayerFrame.getContentPane().add(Searchbutton);
 
@@ -519,8 +664,15 @@ public class Frontend {
 
 		PlayerFrame.getContentPane().add(resultListScrollPane);
 		// PlayerFrame.getContentPane().add(resultList);
-
-		PlayerFrame.setSize(1200, 750);
+		// histogram.setSize(352,40);
+		// histogram.setLocation(710, 340);
+		// histogram.remove(histogram.getComponent(0));
+		histogram.setSize(352, 40);
+		histogram.setLocation(710, 340);
+//		histogram.remove(histogram.getComponent(0));
+//		PlayerFrame.getContentPane().add(histogram);
+//		
+		PlayerFrame.setSize(1400, 900);
 
 		// BufferedImage img = ImageIO.read(new File(imgpath));
 

@@ -85,14 +85,14 @@ public class ExtractFeatures implements Runnable {
 	 * @throws IOException
 	 */
 	private void saveAudioFeatures() throws IOException {
-		String save_path = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\audio_result_csv";
+		String save_path = "/home/hrushikesh/eclipse/projects/final/audio_csv_results/";
 		String audioFeatureFileName = this.videoFileName.substring(0,
 				this.videoFileName.lastIndexOf(".")) + ".csv";
 
 		audioFeatureFileName = audioFeatureFileName.substring(
-				audioFeatureFileName.lastIndexOf("\\"),
+				audioFeatureFileName.lastIndexOf("/"),
 				audioFeatureFileName.length());
-		audioFeatureFileName = save_path + "\\" + audioFeatureFileName;
+		audioFeatureFileName = save_path + "/" + audioFeatureFileName;
 		File featureFile = new File(audioFeatureFileName);
 		if (!featureFile.exists()) {
 			featureFile.createNewFile();
@@ -119,14 +119,14 @@ public class ExtractFeatures implements Runnable {
 	 * @throws IOException
 	 */
 	private void saveVideoFeatures() throws IOException {
-		String save_path = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\video_result_csv";
+		String save_path = "/home/hrushikesh/eclipse/projects/final/csv_results/";
 		String videoFeatureFileName = this.videoFileName.substring(0,
 				this.videoFileName.lastIndexOf(".")) + ".csv";
 
 		videoFeatureFileName = videoFeatureFileName.substring(
-				videoFeatureFileName.lastIndexOf("\\"),
+				videoFeatureFileName.lastIndexOf("/"),
 				videoFeatureFileName.length());
-		videoFeatureFileName = save_path + "\\" + videoFeatureFileName;
+		videoFeatureFileName = save_path + "/" + videoFeatureFileName;
 		File featureFile = new File(videoFeatureFileName);
 		if (!featureFile.exists()) {
 			featureFile.createNewFile();

@@ -1,10 +1,5 @@
 package playWaveFile;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
 /**
  * plays a wave file using PlaySound class
  * 
@@ -25,39 +20,18 @@ public class PlayWaveFile implements Runnable {
 
 	@Override
 	public void run() {
-		// opens the inputStream
-		BufferedInputStream myStream;
-		File audioFile = new File(filename);
-
-		try {
-			FileInputStream inputStream = new FileInputStream(filename);
-			myStream = new BufferedInputStream(inputStream);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
-		}
 
 		// initializes the playSound Object
-		try {
-			this.playSound = new PlaySound(myStream, audioFile.length());
-		} catch (PlayWaveException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		int numOfFrames = this.playSound.numOfFrames;
+		this.playSound = new PlaySound(this.filename);
 
 		// plays the sound
 		try {
 			while (true) {
 				if (this.IS_STOPPED == true)
 					break;
-				for (int i = 0; i < numOfFrames; i++) {
-					
-					if (this.IS_STOPPED == true)
-						break;
-					if (this.IS_PAUSED == false) {
-						this.playSound.play();
-					}
+				if (this.IS_PAUSED == false) {
+					this.playSound.play();
+					this.playSound.i = 0;
 				}
 			}
 		} catch (PlayWaveException e) {
