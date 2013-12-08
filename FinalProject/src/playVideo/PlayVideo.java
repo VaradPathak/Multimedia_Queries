@@ -111,7 +111,7 @@ public class PlayVideo implements Runnable {
 						MatchedVideoLabel.setIcon(new ImageIcon(currentFrame));
 						framesPerSecond.setValue(i);
 						
-						TimeUnit.MILLISECONDS.sleep(30);
+						TimeUnit.MILLISECONDS.sleep(20);
 						i++; // for while
 					} else {
 	
