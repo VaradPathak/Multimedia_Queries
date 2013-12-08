@@ -24,6 +24,7 @@ import extractInformation.ExtractFeatures;
 
 public class Main {
 
+	public static int percent_to_match =25;
 	public static void main(String[] args) throws InterruptedException {
 
 		int width = 352;
@@ -31,7 +32,7 @@ public class Main {
 
 		/***************************************** FEATURE EXTRACTION ****************************/
 		// offline feature extraction
-		// Main.extractFeatures(height, width);
+		//Main.extractFeatures(height, width);
 		/***************************************** FEATURE EXTRACTION ****************************/
 
 		// String queryName; // pass this to createUi and get back the queryName
@@ -75,8 +76,8 @@ public class Main {
 	 */
 	static void extractFeatures(int height, int width)
 			throws InterruptedException {
-		String videoDirectoryPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\video_data\\";
-		String audioDirectoryPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\audio_data\\";
+		String videoDirectoryPath = "/home/hrushikesh/eclipse/projects/final/db/";
+		String audioDirectoryPath = "/home/hrushikesh/eclipse/projects/final/all_audio_files/";
 
 		List<Double[]> videoFeatures = new ArrayList<>();
 		List<Double[]> audioFeatures = new ArrayList<>();
@@ -164,10 +165,10 @@ public class Main {
 	 * @throws IOException
 	 */
 	public static Map<String, Result> match_with_all_audios(
-			List<Double[]> audioFeatures, String audioFileName)
+			List<Double[]> audioFeatures, String audioFileName,Map<String,Map<Integer, ArrayList<Double>>> audio_value_map)
 			throws IOException {
 
-		String myDirectoryPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\audio_result_csv\\";
+		String myDirectoryPath = "/home/hrushikesh/eclipse/projects/final/audio_csv_results/";
 
 		String split = ",";
 		String line = "";
@@ -179,6 +180,7 @@ public class Main {
 
 			List<Double[]> result_feature = new ArrayList<>();
 			String resultfilename = myDirectoryPath + child.getName();
+			String filename = child.getName().substring(0, child.getName().lastIndexOf("."));
 			br = new BufferedReader(new FileReader(resultfilename));
 			System.out.println(resultfilename);
 			try {
@@ -199,7 +201,7 @@ public class Main {
 				e.printStackTrace();
 			}
 			br.close();
-			double matchvalue = matchFeatures(audioFeatures, result_feature);
+			double matchvalue = matchFeatures(audioFeatures, result_feature,audio_value_map,filename);
 			System.out.println("done" + child.getName() + "matchvalue = "
 					+ matchvalue);
 
@@ -229,10 +231,11 @@ public class Main {
 	 * @throws IOException
 	 */
 	public static List<Result> match_with_all_videos(
-			List<Double[]> featureList, String videoFileName)
+			List<Double[]> featureList, String videoFileName,
+			Map<String,Map<Integer, ArrayList<Double>>> video_value_map)
 			throws IOException {
 
-		String myDirectoryPath = "F:\\git\\test\\Multimedia_Queries\\FinalProject\\video_result_csv\\";
+		String myDirectoryPath = "/home/hrushikesh/eclipse/projects/final/csv_results/";
 
 		String split = ",";
 		String line = "";
@@ -245,6 +248,7 @@ public class Main {
 			// System.out.println(child.getName());
 			List<Double[]> result_feature = new ArrayList<>();
 			String resultfilename = myDirectoryPath + child.getName();
+			String filename = child.getName().substring(0, child.getName().lastIndexOf("."));
 			// String resultfilename =myDirectoryPath + "talk2.csv";
 			br = new BufferedReader(new FileReader(resultfilename));
 			System.out.println(resultfilename);
@@ -268,7 +272,7 @@ public class Main {
 				e.printStackTrace();
 			}
 			br.close();
-			double matchvalue = matchFeatures(featureList, result_feature);
+			double matchvalue = matchFeatures(featureList, result_feature,video_value_map,filename);
 			System.out.println("done" + child.getName() + "matchvalue = "
 					+ matchvalue);
 
@@ -310,6 +314,11 @@ public class Main {
 				minval = temp;
 		}
 
+		
+			
+	
+
+		
 		return minval;
 	}
 
@@ -324,11 +333,12 @@ public class Main {
 	 * @throws IOException
 	 */
 	static double matchFeatures(List<Double[]> queryfeature,
-			List<Double[]> dbfeatures) throws IOException {
+			List<Double[]> dbfeatures,
+			Map<String,Map<Integer, ArrayList<Double>>> VO_value_map,String filename) throws IOException {
 
 		int jumpSize = 0; // indicates frame/sample separation after which to
 							// compare
-		int no_of_frames_to_match = queryfeature.size() * 25 / 100;
+		int no_of_frames_to_match = queryfeature.size() * percent_to_match / 100;
 		jumpSize = queryfeature.size() / no_of_frames_to_match;
 		System.out.println("frame difference = " + jumpSize);
 		System.out.println("queryfeatures size = " + queryfeature.size());
@@ -351,6 +361,7 @@ public class Main {
 			int temp = i;
 
 			ArrayList<Double> mad_values = new ArrayList<>();
+		
 			while (j < queryfeature.size()) {
 
 				mad_values.add(list_iterator++,
@@ -375,6 +386,7 @@ public class Main {
 		System.out.println("match done, total iterations over queryvideo = "
 				+ counters);
 
+		VO_value_map.put(filename, value_map);
 		return calculate_match(value_map); // calculates the value used for
 											// ranking the vid
 		// createHistoGram(value_map);
@@ -400,6 +412,7 @@ public class Main {
 		}
 		// result /= 25;
 		result *= 1000;
+
 		return result;
 	}
 }

@@ -23,7 +23,7 @@ public class PlaySound {
 	private int frameSize;
 	private long fileSize;
 
-	private final int EXTERNAL_BUFFER_SIZE = 32768; // 128Kb
+	private final int EXTERNAL_BUFFER_SIZE = 4096; // 128Kb
 
 	public volatile boolean IS_PAUSED;
 	public volatile boolean IS_STOPPED;
