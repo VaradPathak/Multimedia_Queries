@@ -37,16 +37,20 @@ public class ExtractAudio {
 		}
 	}
 
-	public void extractAudio_old(List<double[]> audioFeatureList) {
+	public void extractAudio_old(List<Double[]> audioFeatureList) {
 		// create a wave object
 		Wave wave = new Wave(filename);
 
 		// change the spectrogram representation
-		int fftSampleSize = 128;
-		int overlapFactor = 0;
+		int fftSampleSize = 1024;
+		int overlapFactor = 1;
 		Spectrogram spect = new Spectrogram(wave, fftSampleSize, overlapFactor);
 		for (double[] elem : spect.getNormalizedSpectrogramData()) {
-			audioFeatureList.add(elem);
+			Double[] result = new Double[elem.length];
+			for (int i = 0; i < elem.length; i++) {
+				result[i] = elem[i];
+			}
+			audioFeatureList.add(result);
 		}
 	}
 

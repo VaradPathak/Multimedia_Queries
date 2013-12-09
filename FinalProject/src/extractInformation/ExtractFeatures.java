@@ -7,10 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.ArrayList;
-
-import playWaveFile.PlayWaveException;
+import java.util.List;
 
 /**
  * @author Varad
@@ -172,11 +170,7 @@ public class ExtractFeatures implements Runnable {
 			this.chromaFeatureList.add(extractChroma.extractChroma(frame));
 		}
 		ExtractAudio extractAudio = new ExtractAudio(this.audioFileName);
-		try {
-			extractAudio.extractAudio(this.audioFeatureList);
-		} catch (PlayWaveException e) {
-			e.printStackTrace();
-		}
+		extractAudio.extractAudio_old(this.audioFeatureList);
 	}
 
 }
