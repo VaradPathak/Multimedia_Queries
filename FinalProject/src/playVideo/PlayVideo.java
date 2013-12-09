@@ -12,7 +12,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSlider;
 
-import playWaveFile.PlaySound;
 import playWaveFile.PlayWaveFile;
 
 /**
