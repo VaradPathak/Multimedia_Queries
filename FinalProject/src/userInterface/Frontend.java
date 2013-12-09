@@ -100,6 +100,8 @@ public class Frontend {
 	Plot2DPanel video_histogram = new Plot2DPanel();
 	Plot2DPanel audio_histogram = new Plot2DPanel();
 	Plot2DPanel histogram_blank = new Plot2DPanel();
+	Plot2DPanel audio_histogram_blank = new Plot2DPanel();
+	
 	Map<String, Map<Integer, ArrayList<Double>>> video_value_map = new HashMap<>();
 	Map<String, Map<Integer, ArrayList<Double>>> audio_value_map = new HashMap<>();
 	Map<String, Plot2DPanel> video_histogram_map = new HashMap<>();
@@ -177,6 +179,7 @@ public class Frontend {
 			videoPlot.addHistogramPlot("My Plot", Color.blue, plotVals, width);
 			videoPlot.remove(videoPlot.getComponent(0));
 
+			audioPlot.remove(audioPlot.getComponent(0));
 			video_histogram_map.put(name, videoPlot);
 			audio_histogram_map.put(name, audioPlot);
 
@@ -251,15 +254,15 @@ public class Frontend {
 		video_histogram.setVisible(false);
 		video_histogram = video_histogram_map.get(videoname);
 		// histogram.setAlignmentY(60);
-		video_histogram.setSize(352, 175);
-		video_histogram.setLocation(710, 195);
+		video_histogram.setSize(352, 60);
+		video_histogram.setLocation(710, 330);
 		PlayerFrame.getContentPane().add(video_histogram);
 		video_histogram.setVisible(true);
 		
 		audio_histogram.setVisible(false);
 		audio_histogram = audio_histogram_map.get(videoname);
-		audio_histogram.setSize(352, 175);
-		audio_histogram.setLocation(710, 20);
+		audio_histogram.setSize(352, 60);
+		audio_histogram.setLocation(710, 250);
 		PlayerFrame.getContentPane().add(audio_histogram);
 		audio_histogram.setVisible(true);
 
@@ -388,11 +391,17 @@ public class Frontend {
 				video_histogram.setVisible(false);
 				audio_histogram.setVisible(false);
 
-				histogram_blank.setSize(352, 40);
-				histogram_blank.setLocation(710, 340);
+				audio_histogram_blank.setSize(352,60);
+				audio_histogram_blank.setLocation(710, 250);
+				histogram_blank.setSize(352, 60);
+				histogram_blank.setLocation(710, 330);
 
 				PlayerFrame.getContentPane().add(histogram_blank);
+				PlayerFrame.getContentPane().add(audio_histogram_blank);
+				
 				histogram_blank.setVisible(true);
+				audio_histogram_blank.setVisible(true);
+				
 
 			}
 		});
@@ -527,6 +536,7 @@ public class Frontend {
 					video_value_map = new HashMap<>();
 					audio_value_map = new HashMap<>();
 					video_histogram_map = new HashMap<>();
+					audio_histogram_map = new HashMap<>();
 
 				}
 
@@ -809,20 +819,21 @@ public class Frontend {
 		// histogram.setSize(352,40);
 		// histogram.setLocation(710, 340);
 		// histogram.remove(histogram.getComponent(0));
-		video_histogram.setSize(352, 40);
-		video_histogram.setLocation(710, 340);
+		video_histogram.setSize(352, 60);
+		video_histogram.setLocation(710, 330);
 
 		video_histogram.remove(video_histogram.getComponent(0));
 		video_histogram.setVisible(true);
 		histogram_blank.remove(histogram_blank.getComponent(0));
+		audio_histogram_blank.remove(audio_histogram_blank.getComponent(0));
 		PlayerFrame.getContentPane().add(video_histogram);
 		
-		audio_histogram.setSize(352, 40);
-		audio_histogram.setLocation(710, 340);
+		audio_histogram.setSize(352, 60);
+		audio_histogram.setLocation(710, 250);
 
 		audio_histogram.remove(audio_histogram.getComponent(0));
 		audio_histogram.setVisible(true);
-		histogram_blank.remove(histogram_blank.getComponent(0));
+		//histogram_blank.remove(histogram_blank.getComponent(0));
 
 		PlayerFrame.getContentPane().add(audio_histogram);		
 		
