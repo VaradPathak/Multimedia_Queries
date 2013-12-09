@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +50,7 @@ public class Frontend {
 	String queryPath = "/home/hrushikesh/eclipse/projects/final/query/";
 	String videodbPath = "/home/hrushikesh/eclipse/projects/final/db/";
 	String audiodbPath = "/home/hrushikesh/eclipse/projects/final/all_audio_files/";
-	JFrame PlayerFrame = new JFrame("Video Player");
+	JFrame PlayerFrame = new JFrame("Ninja Video Player");
 	// JPanel ButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 	// JFrame ButtonPanel = new JFrame();
 	JPanel OriginalButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -95,28 +97,33 @@ public class Frontend {
 	Thread queryAudioWorker;
 	PlayWaveFile queryAudioTemp;
 
-	Plot2DPanel histogram = new Plot2DPanel();
+	Plot2DPanel video_histogram = new Plot2DPanel();
+	Plot2DPanel audio_histogram = new Plot2DPanel();
 	Plot2DPanel histogram_blank = new Plot2DPanel();
+	Plot2DPanel audio_histogram_blank = new Plot2DPanel();
+
 	Map<String, Map<Integer, ArrayList<Double>>> video_value_map = new HashMap<>();
 	Map<String, Map<Integer, ArrayList<Double>>> audio_value_map = new HashMap<>();
-	Map<String, Plot2DPanel> histogram_map = new HashMap<>();
+	Map<String, Plot2DPanel> video_histogram_map = new HashMap<>();
+	Map<String, Plot2DPanel> audio_histogram_map = new HashMap<>();
 
 	public Map<String, double[]> convolute(
-			Map<String, Map<Integer, ArrayList<Double>>> video_value_map,
-			long no_of_frames) {
+			Map<String, Map<Integer, ArrayList<Double>>> video_value_map) {
 		Map<String, double[]> resultMap = new HashMap<>();
 
-		int jumpSize = 4;
-
 		for (String d : video_value_map.keySet()) {
+			File file = new File(videodbPath + d + ".rgb");
+
+			long no_of_frames = file.length() / (height * width * 3);
 			double[] result = new double[(int) no_of_frames];
+
 			Map<Integer, ArrayList<Double>> video_map = video_value_map.get(d);
 			for (Integer e : video_map.keySet()) {
 				ArrayList<Double> matchList = video_map.get(e);
 				for (int i = 0; i < matchList.size(); i++) {
 					double value = matchList.get(i);
-					if ((e * jumpSize + i * jumpSize) < no_of_frames)
-						result[e * jumpSize + i * jumpSize] = value + 1;
+					if ((e * Main.jumpSize + i * Main.jumpSize) < no_of_frames)
+						result[e * Main.jumpSize + i * Main.jumpSize] = value + 1;
 					else
 						break;
 				}
@@ -130,12 +137,16 @@ public class Frontend {
 	public void Calculate_Histogram(
 			Map<String, Map<Integer, ArrayList<Double>>> video_value_map,
 			Map<String, Map<Integer, ArrayList<Double>>> audio_value_map,
-			Map<String, Plot2DPanel> histogram_map, long no_of_frames) {
+			Map<String, Plot2DPanel> video_histogram_map,
+			Map<String, Plot2DPanel> audio_histogram_map,
+			Map<String, Integer> audio_window_count_map) {
 
-		Map<String, double[]> resultMap = convolute(video_value_map,
-				no_of_frames);
+		Map<String, double[]> resultMap = convolute(video_value_map);
 
 		for (String name : resultMap.keySet()) {
+			File file = new File(videodbPath + name + ".rgb");
+
+			long no_of_frames = file.length() / (height * width * 3);
 			double[] result = resultMap.get(name);
 			double max = 0;
 			for (double d : result) {
@@ -154,30 +165,107 @@ public class Frontend {
 			for (int i = 0; i < no_of_frames; i++) {
 				plotVals[i][0] = i;
 				plotVals[i][1] = result[i];
-				width[i] = 0.1;
+				width[i] = 0.001;
 			}
-			Plot2DPanel plot = new Plot2DPanel();
+			Plot2DPanel videoPlot = new Plot2DPanel();
+			Plot2DPanel audioPlot = new Plot2DPanel();
 
 			// add a line plot to the PlotPanel
-			plot.addHistogramPlot("My Plot", plotVals, width);
-			plot.remove(plot.getComponent(0));
+			getHistogram(audioPlot, audio_value_map, name, Color.red,
+					audio_window_count_map);
 
-			histogram_map.put(name, plot);
+			// getHistogram(plot, video_value_map, name, Color.blue);
+
+			videoPlot.addHistogramPlot("My Plot", Color.blue, plotVals, width);
+			videoPlot.remove(videoPlot.getComponent(0));
+
+			audioPlot.remove(audioPlot.getComponent(0));
+			video_histogram_map.put(name, videoPlot);
+			audio_histogram_map.put(name, audioPlot);
 
 		}
 	}
+
+	private void getHistogram(Plot2DPanel plot,
+			Map<String, Map<Integer, ArrayList<Double>>> feature_value_map,
+			String name, Color color,
+			Map<String, Integer> audio_window_count_map) {
+
+		Map<String, double[]> resultMap = convoluteAudio(feature_value_map,
+				audio_window_count_map);
+
+		int no_of_windows = audio_window_count_map.get(name);
+		double[] result = resultMap.get(name);
+		double max = 0;
+		for (double d : result) {
+			if (d > max) {
+				max = d;
+			}
+		}
+		for (int i = 0; i < result.length; i++) {
+			if (result[i] > 0) {
+				result[i] = max - result[i];
+			}
+		}
+
+		double[][] plotVals = new double[(int) no_of_windows][2];
+		double[] width = new double[(int) no_of_windows];
+		for (int i = 0; i < no_of_windows; i++) {
+			plotVals[i][0] = i;
+			plotVals[i][1] = result[i] / 5;
+			width[i] = 0.001;
+		}
+
+		plot.addHistogramPlot("My Plot", color, plotVals, width);
+	}
+
+	private Map<String, double[]> convoluteAudio(
+			Map<String, Map<Integer, ArrayList<Double>>> feature_value_map,
+			Map<String, Integer> audio_window_count_map) {
+		Map<String, double[]> resultMap = new HashMap<>();
+
+		for (String d : feature_value_map.keySet()) {
+			int no_of_windows = audio_window_count_map.get(d);
+			double[] result = new double[no_of_windows];
+
+			Map<Integer, ArrayList<Double>> value_map = feature_value_map
+					.get(d);
+			for (Integer e : value_map.keySet()) {
+				ArrayList<Double> matchList = value_map.get(e);
+				for (int i = 0; i < matchList.size(); i++) {
+					double value = matchList.get(i);
+					if ((e * Main.jumpSize + i * Main.jumpSize) < no_of_windows)
+						result[e * Main.jumpSize + i * Main.jumpSize] = value + 1;
+					else
+						break;
+				}
+			}
+			resultMap.put(d, result);
+		}
+
+		return resultMap;
+	}
+
 	void update_histogram(String videoname) {
-	
-//		histogram_blank.setSize(352, 40);
-//		histogram_blank.setLocation(710, 340);
-//		PlayerFrame.getContentPane().add(histogram_blank);
-		histogram.setVisible(false);
-		histogram = histogram_map.get(videoname);
-		histogram.setSize(352, 40);
-		histogram.setLocation(710, 340);
-		PlayerFrame.getContentPane().add(histogram);
-		histogram.setVisible(true);
-		
+
+		// histogram_blank.setSize(352, 40);
+		// histogram_blank.setLocation(710, 340);
+		// PlayerFrame.getContentPane().add(histogram_blank);
+		video_histogram.setVisible(false);
+		video_histogram = video_histogram_map.get(videoname);
+		// histogram.setAlignmentY(60);
+		video_histogram.setSize(352, 60);
+		video_histogram.setLocation(710, 330);
+		PlayerFrame.getContentPane().add(video_histogram);
+		video_histogram.setVisible(true);
+
+		audio_histogram.setVisible(false);
+		audio_histogram = audio_histogram_map.get(videoname);
+		audio_histogram.setSize(352, 60);
+		audio_histogram.setLocation(710, 250);
+		PlayerFrame.getContentPane().add(audio_histogram);
+		audio_histogram.setVisible(true);
+
 	}
 
 	public void createUi() throws IOException {
@@ -190,40 +278,45 @@ public class Frontend {
 			public void actionPerformed(ActionEvent e) {
 				if (IS_PLAYING == false) {
 					// insert actions for play button
-					IS_PLAYING = true;
 
 					if (IS_SELECTED == true) {
-						//IS_SELECTED = false;
+						IS_PLAYING = true;
+						// IS_SELECTED = false;
 						String videoname = resultList.getSelectedValue()
 								.toString() + ".rgb";
 						videoname = videodbPath + videoname;
-						matchedvideoTask = new PlayVideo(width, height,
-								videoname, MatchedVideoLabel, matchedscrollbar);
-						matchedvideotemp = (PlayVideo) matchedvideoTask;
-						matchedvideoWorker = new Thread(matchedvideoTask);
-						matchedvideoWorker.setName("videoplay");
-
+						
 						String audioname = resultList.getSelectedValue()
 								.toString() + ".wav";
 						audioname = audiodbPath + audioname;
 
 						// display histogram
-						update_histogram(resultList
-								.getSelectedValue().toString());
-						
-						/*histogram = histogram_map.get(resultList.getSelectedValue()
+						update_histogram(resultList.getSelectedValue()
 								.toString());
-						histogram.setSize(352, 40);
-						histogram.setLocation(710, 340);
-						PlayerFrame.getContentPane().add(histogram);*/
-						
+
+						/*
+						 * histogram =
+						 * histogram_map.get(resultList.getSelectedValue()
+						 * .toString()); histogram.setSize(352, 40);
+						 * histogram.setLocation(710, 340);
+						 * PlayerFrame.getContentPane().add(histogram);
+						 */
+
 						// histogram.remove(histogram.getComponent(0));
-						//PlayerFrame.getContentPane().add(histogram);
+						// PlayerFrame.getContentPane().add(histogram);
 						matchedAudioTask = new PlayWaveFile(audioname);
 						matchedAudioTemp = (PlayWaveFile) matchedAudioTask;
 						matchedAudioWorker = new Thread(matchedAudioTask);
 						matchedAudioWorker.setName("audio1");
 
+						matchedvideoTask = new PlayVideo(width, height,
+								videoname, MatchedVideoLabel, matchedscrollbar,
+								matchedAudioTemp);
+						matchedvideotemp = (PlayVideo) matchedvideoTask;
+						matchedvideoWorker = new Thread(matchedvideoTask);
+						matchedvideoWorker.setName("videoplay");
+
+						
 						matchedvideoWorker.start();
 						matchedAudioWorker.start();
 					}
@@ -241,13 +334,8 @@ public class Frontend {
 					String videoname = resultList.getSelectedValue().toString()
 							+ ".rgb";
 					videoname = videodbPath + videoname;
-					matchedvideoTask = new PlayVideo(width, height, videoname,
-							MatchedVideoLabel, matchedscrollbar);
-					matchedvideotemp = (PlayVideo) matchedvideoTask;
-					matchedvideoWorker = new Thread(matchedvideoTask);
-					matchedvideoWorker.setName("videoplay");
-					update_histogram(resultList
-							.getSelectedValue().toString());
+					
+					update_histogram(resultList.getSelectedValue().toString());
 					String audioname = resultList.getSelectedValue().toString()
 							+ ".wav";
 					audioname = audiodbPath + audioname;
@@ -257,6 +345,13 @@ public class Frontend {
 					matchedAudioWorker = new Thread(matchedAudioTask);
 					matchedAudioWorker.setName("audio1");
 
+					matchedvideoTask = new PlayVideo(width, height, videoname,
+							MatchedVideoLabel, matchedscrollbar,
+							matchedAudioTemp);
+					matchedvideotemp = (PlayVideo) matchedvideoTask;
+					matchedvideoWorker = new Thread(matchedvideoTask);
+					matchedvideoWorker.setName("videoplay");
+					
 					matchedvideoWorker.start();
 					matchedAudioWorker.start();
 				}
@@ -298,7 +393,21 @@ public class Frontend {
 				MatchedVideoLabel.setForeground(Color.black);
 				MatchedVideoLabel.setIcon(null);
 				matchedscrollbar.setValue(0);
-				
+
+				video_histogram.setVisible(false);
+				audio_histogram.setVisible(false);
+
+				audio_histogram_blank.setSize(352, 60);
+				audio_histogram_blank.setLocation(710, 250);
+				histogram_blank.setSize(352, 60);
+				histogram_blank.setLocation(710, 330);
+
+				PlayerFrame.getContentPane().add(histogram_blank);
+				PlayerFrame.getContentPane().add(audio_histogram_blank);
+
+				histogram_blank.setVisible(true);
+				audio_histogram_blank.setVisible(true);
+
 			}
 		});
 
@@ -309,18 +418,13 @@ public class Frontend {
 			public void actionPerformed(ActionEvent e) {
 				if (OIS_PLAYING == false) {
 					// insert actions for play button
-					OIS_PLAYING = true;
 
 					if (IS_SEARCHED == true) {
+						OIS_PLAYING = true;
 						String videoname = queryName.substring(0,
 								queryName.lastIndexOf(" "));
 						videoname = queryPath + videoname;
-						queryvideoTask = new PlayVideo(width, height,
-								videoname, OriginalVideoLabel, queryscrollbar);
-						queryvideotemp = (PlayVideo) queryvideoTask;
-						queryvideoWorker = new Thread(queryvideoTask);
-						queryvideoWorker.setName("queryvideoplay");
-
+						
 						String audioname = queryName.substring(
 								queryName.lastIndexOf(" ") + 1,
 								queryName.length());
@@ -331,6 +435,14 @@ public class Frontend {
 						queryAudioWorker = new Thread(queryAudioTask);
 						queryAudioWorker.setName("audio1");
 
+						queryvideoTask = new PlayVideo(width, height,
+								videoname, OriginalVideoLabel, queryscrollbar,
+								queryAudioTemp);
+						queryvideotemp = (PlayVideo) queryvideoTask;
+						queryvideoWorker = new Thread(queryvideoTask);
+						queryvideoWorker.setName("queryvideoplay");
+
+						
 						queryvideoWorker.start();
 						queryAudioWorker.start();
 					}
@@ -346,12 +458,7 @@ public class Frontend {
 					String videoname = queryName.substring(0,
 							queryName.lastIndexOf(" "));
 					videoname = queryPath + videoname;
-					queryvideoTask = new PlayVideo(width, height, videoname,
-							OriginalVideoLabel, queryscrollbar);
-					queryvideotemp = (PlayVideo) queryvideoTask;
-					queryvideoWorker = new Thread(queryvideoTask);
-					queryvideoWorker.setName("queryvideoplay");
-
+					
 					String audioname = queryName.substring(
 							queryName.lastIndexOf(" ") + 1, queryName.length());
 					audioname = queryPath + audioname;
@@ -360,6 +467,12 @@ public class Frontend {
 					queryAudioTemp = (PlayWaveFile) queryAudioTask;
 					queryAudioWorker = new Thread(queryAudioTask);
 					queryAudioWorker.setName("audio1");
+
+					queryvideoTask = new PlayVideo(width, height, videoname,
+							OriginalVideoLabel, queryscrollbar, queryAudioTemp);
+					queryvideotemp = (PlayVideo) queryvideoTask;
+					queryvideoWorker = new Thread(queryvideoTask);
+					queryvideoWorker.setName("queryvideoplay");
 
 					queryvideoWorker.start();
 					queryAudioWorker.start();
@@ -404,11 +517,47 @@ public class Frontend {
 			}
 		});
 
+		final JButton Clearbutton = new JButton("Clear");
+		Clearbutton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				inputQuery.setText("");
+
+			}
+		});
 		final JButton Searchbutton = new JButton("Search");
 		Searchbutton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+
+				if (IS_PLAYING == true) {
+					matchedvideotemp.stopVideo();
+					matchedAudioTemp.stopAudio();
+					// insert actions for stop button
+					MatchedVideoLabel.setBackground(Color.black);
+					MatchedVideoLabel.setForeground(Color.black);
+					MatchedVideoLabel.setIcon(null);
+					matchedscrollbar.setValue(0);
+
+				}
+				if (OIS_PLAYING == true) {
+					queryvideotemp.stopVideo();
+					queryAudioTemp.stopAudio();
+
+					OriginalVideoLabel.setBackground(Color.black);
+					OriginalVideoLabel.setIcon(null);
+					queryscrollbar.setValue(0);
+				}
+				if (IS_PLAYING == true || OIS_PLAYING == true) {
+					video_value_map = new HashMap<>();
+					audio_value_map = new HashMap<>();
+					video_histogram_map = new HashMap<>();
+					audio_histogram_map = new HashMap<>();
+
+				}
 
 				IS_PLAYING = false;
 				OIS_PLAYING = false;
@@ -446,20 +595,39 @@ public class Frontend {
 					List<Result> videoMatchResult = Main.match_with_all_videos(
 							videoFeatures, videoFileName, video_value_map);
 
+					Map<String, Integer> audio_window_count_map = new HashMap<>();
 					Map<String, Result> audioMatchResult = Main
 							.match_with_all_audios(audioFeatures,
-									audioFileName, audio_value_map);
-
-					File file = new File(videoFileName);
-
-					long no_of_frames = file.length() / (height * width * 3);
+									audioFileName, audio_value_map,
+									audio_window_count_map);
 
 					Calculate_Histogram(video_value_map, audio_value_map,
-							histogram_map, no_of_frames);
+							video_histogram_map, audio_histogram_map,
+							audio_window_count_map);
+					/*
+					 * //Uncomment if need to take the percentage
+					 * 
+					 * double maxVal = 0; for (Result result : videoMatchResult)
+					 * { if (maxVal < result.rank_value) { maxVal =
+					 * result.rank_value; } } for (Result result :
+					 * videoMatchResult) { result.rank_value =
+					 * (result.rank_value * 100) / maxVal; } maxVal = 0; for
+					 * (String result : audioMatchResult.keySet()) { if (maxVal
+					 * < audioMatchResult.get(result).rank_value) { maxVal =
+					 * audioMatchResult.get(result).rank_value; } } for (String
+					 * result : audioMatchResult.keySet()) {
+					 * audioMatchResult.get(result).rank_value =
+					 * (audioMatchResult .get(result).rank_value * 100) /
+					 * maxVal; }
+					 */
 					for (Result result : videoMatchResult) {
 						if (audioMatchResult.containsKey(result.videoname)) {
-							result.rank_value += audioMatchResult
-									.get(result.videoname).rank_value;
+							System.out.println("Video match: "
+									+ result.rank_value
+									+ " Audio Match: "
+									+ audioMatchResult.get(result.videoname).rank_value);
+							result.rank_value += (audioMatchResult
+									.get(result.videoname).rank_value / 3);
 						}
 					}
 
@@ -550,7 +718,7 @@ public class Frontend {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				// TODO Auto-generated method stub
-				inputQuery.setText("");
+				// inputQuery.setText("");
 			}
 		});
 		// PlayerFrame.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -653,6 +821,12 @@ public class Frontend {
 		Searchbutton.setLocation(50, 90);
 		PlayerFrame.getContentPane().add(Searchbutton);
 
+		// button to clear the text box
+		Clearbutton.setSize(90, 25);
+
+		Clearbutton.setLocation(160, 90);
+		PlayerFrame.getContentPane().add(Clearbutton);
+
 		// add result list box
 
 		// resultList.setSize(300,200);
@@ -667,16 +841,93 @@ public class Frontend {
 		// histogram.setSize(352,40);
 		// histogram.setLocation(710, 340);
 		// histogram.remove(histogram.getComponent(0));
-		histogram.setSize(352, 40);
-		histogram.setLocation(710, 340);
-//		histogram.remove(histogram.getComponent(0));
-//		PlayerFrame.getContentPane().add(histogram);
-//		
+		video_histogram.setSize(352, 60);
+		video_histogram.setLocation(710, 330);
+
+		video_histogram.remove(video_histogram.getComponent(0));
+		video_histogram.setVisible(true);
+		histogram_blank.remove(histogram_blank.getComponent(0));
+		audio_histogram_blank.remove(audio_histogram_blank.getComponent(0));
+		PlayerFrame.getContentPane().add(video_histogram);
+
+		audio_histogram.setSize(352, 60);
+		audio_histogram.setLocation(710, 250);
+
+		audio_histogram.remove(audio_histogram.getComponent(0));
+		audio_histogram.setVisible(true);
+		// histogram_blank.remove(histogram_blank.getComponent(0));
+
+		PlayerFrame.getContentPane().add(audio_histogram);
+
 		PlayerFrame.setSize(1400, 900);
 
 		// BufferedImage img = ImageIO.read(new File(imgpath));
 
 		PlayerFrame.setVisible(true);
+
+		PlayerFrame.addWindowListener(new WindowListener() {
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// TODO Auto-generated method stub
+				if (IS_PLAYING == true) {
+					matchedvideotemp.stopVideo();
+					matchedAudioTemp.stopAudio();
+					// insert actions for stop button
+					MatchedVideoLabel.setBackground(Color.black);
+					MatchedVideoLabel.setForeground(Color.black);
+					MatchedVideoLabel.setIcon(null);
+					matchedscrollbar.setValue(0);
+
+				}
+				if (OIS_PLAYING == true) {
+					queryvideotemp.stopVideo();
+					queryAudioTemp.stopAudio();
+
+					OriginalVideoLabel.setBackground(Color.black);
+					OriginalVideoLabel.setIcon(null);
+					queryscrollbar.setValue(0);
+				}
+
+			}
+
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowClosed(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+		});
 
 	}
 }

@@ -7,15 +7,17 @@ package playWaveFile;
  */
 public class PlayWaveFile implements Runnable {
 	String filename;
-	PlaySound playSound;
+	public PlaySound playSound;
 	int numberOfFrames;
 
 	public volatile boolean IS_PAUSED;
 	public volatile boolean IS_STOPPED;
+	public volatile boolean IS_STARTED;
 	public volatile int i = 0;
 
 	public PlayWaveFile(String filename) {
 		this.filename = filename;
+		this.IS_STARTED =false;
 	}
 
 	@Override
@@ -23,18 +25,20 @@ public class PlayWaveFile implements Runnable {
 
 		// initializes the playSound Object
 		this.playSound = new PlaySound(this.filename);
-
+		
 		// plays the sound
 		try {
 			while (true) {
 				if (this.IS_STOPPED == true)
 					break;
 				if (this.IS_PAUSED == false) {
+					this.IS_STARTED =true;
 					this.playSound.play();
+					
 					this.playSound.i = 0;
 				}
 			}
-		} catch (PlayWaveException e) {
+		} catch (PlayWaveException | InterruptedException e) {
 			e.printStackTrace();
 			return;
 		}

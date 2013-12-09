@@ -12,6 +12,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSlider;
 
+import playWaveFile.PlaySound;
+import playWaveFile.PlayWaveFile;
+
 /**
  * @author Varad
  * 
@@ -23,13 +26,14 @@ public class PlayVideo implements Runnable {
 	// List<Double[]> featureList;
 	JLabel MatchedVideoLabel;
 	JSlider framesPerSecond;
+	PlayWaveFile audiofps;
 	
 	public volatile boolean IS_PAUSED;
 	public volatile boolean IS_STOPPED;
 	public volatile int i = 0;
 
 	public PlayVideo(int w, int h, String videoFileName,
-			JLabel MatchedVideoLabel, JSlider framesPerSecond) {
+			JLabel MatchedVideoLabel, JSlider framesPerSecond,PlayWaveFile audiofps) {
 		this.width = w;
 		this.height = h;
 		this.fileName = videoFileName;
@@ -39,6 +43,8 @@ public class PlayVideo implements Runnable {
 		this.IS_STOPPED = false;
 		this.framesPerSecond = framesPerSecond;
 		this.i = 0;
+		this.audiofps =audiofps;
+		
 	}
 
 	public void PauseVideo() {
@@ -81,9 +87,14 @@ public class PlayVideo implements Runnable {
 			framesPerSecond.setMaximum((int)iteration); 
 			framesPerSecond.setMinimum(0);
 
-			
+		
 		    while(true)
 		    {
+		    	while(this.audiofps.IS_STARTED !=true)
+		    	{
+		    		
+		    	}
+		    	this.audiofps.playSound.i = i;
 		    	if (IS_STOPPED == true)
 					break;
 				while (i < iteration) {
@@ -111,14 +122,16 @@ public class PlayVideo implements Runnable {
 						MatchedVideoLabel.setIcon(new ImageIcon(currentFrame));
 						framesPerSecond.setValue(i);
 						
-						TimeUnit.MILLISECONDS.sleep(24);
+						TimeUnit.MILLISECONDS.sleep(35);
 						i++; // for while
+						this.audiofps.playSound.i = i;
 					} else {
 	
 						Thread.sleep(30);
 					}
 				}
 				i = 0;
+				this.audiofps.playSound.i = i;
 		    }
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

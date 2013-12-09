@@ -1,9 +1,11 @@
 package playWaveFile;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -23,26 +25,29 @@ public class PlaySound {
 
 	public String fileName;
 
-	private final int EXTERNAL_BUFFER_SIZE = 4096; // 4Kb
+	private final int EXTERNAL_BUFFER_SIZE = 3550; // 3Kb
 
 	public volatile boolean IS_PAUSED;
 	public volatile boolean IS_STOPPED;
-	public volatile long i = 0;
+	public volatile long i = -1;
 
+	public SourceDataLine dataLine = null;
 	public PlaySound(String filename) {
 		this.fileName = filename;
 		this.IS_PAUSED = false;
 		this.IS_STOPPED = false;
-		this.i = 0;
+		this.i = -1;
 	}
 
-	public void play() throws PlayWaveException {
+	public void play() throws PlayWaveException, InterruptedException {
 		// opens the inputStream
 		AudioInputStream audioInputStream = null;
 		// opens the audio channel
-		SourceDataLine dataLine = null;
+		
 
 		try {
+			File audioFile = new File(this.fileName);
+			int fileSize = (int) audioFile.length();
 			FileInputStream inputStream = new FileInputStream(this.fileName);
 			InputStream waveStream = new BufferedInputStream(inputStream);
 			audioInputStream = AudioSystem.getAudioInputStream(waveStream);
@@ -50,6 +55,8 @@ public class PlaySound {
 			// Obtain the information about the AudioInputStream
 			AudioFormat audioFormat = audioInputStream.getFormat();
 			Info info = new Info(SourceDataLine.class, audioFormat);
+			byte[] tempBuffer = new byte[fileSize];
+			audioInputStream.read(tempBuffer, 0, tempBuffer.length);
 
 			dataLine = (SourceDataLine) AudioSystem.getLine(info);
 			dataLine.open(audioFormat, EXTERNAL_BUFFER_SIZE);
@@ -57,22 +64,27 @@ public class PlaySound {
 			// Starts the music :P
 			dataLine.start();
 
-			int readBytes = 0;
-			byte[] audioBuffer = new byte[EXTERNAL_BUFFER_SIZE];
-
-			while (readBytes != -1) {
+			// int readBytes = 0;
+			// byte[] audioBuffer = new byte[EXTERNAL_BUFFER_SIZE];
+			while(i<0)
+			{
+				//System.out.println("waiting.......");
+			}
+			while ((tempBuffer.length - (this.i * EXTERNAL_BUFFER_SIZE)) >= EXTERNAL_BUFFER_SIZE) {
 				if (IS_STOPPED) {
 					this.i = 0;
 					break;
 				}
 				if (IS_PAUSED == false) {
-					this.i++;
-					readBytes = audioInputStream.read(audioBuffer, 0,
-							audioBuffer.length);
-					if (readBytes >= 0) {
-						dataLine.write(audioBuffer, 0, readBytes);
-					}
+					int ind = (int) (this.i * EXTERNAL_BUFFER_SIZE);
+					dataLine.write(tempBuffer, ind, EXTERNAL_BUFFER_SIZE);
+					//dataLine.drain();
+					//TimeUnit.MILLISECONDS.sleep(24);
+					//System.out.println(i);
+					//this.i++;
+					
 				}
+				
 			}
 		} catch (IOException e1) {
 			throw new PlayWaveException(e1);
